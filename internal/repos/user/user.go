@@ -30,6 +30,7 @@ type IUserRepo interface {
 	GetAppTokensNearingExpiration(c context.Context, before time.Duration) ([]*models.AppToken, error)
 	DeleteStaleAppTokens(c context.Context) error
 	GetLastCreatedOrModifiedForUserResources(c context.Context, userID int) (string, error)
+	IsAppTokenValid(c context.Context, tokenString string) (bool, error)
 }
 
 type UserRepository struct {
@@ -252,6 +253,15 @@ func (r *UserRepository) GetAppTokensNearingExpiration(c context.Context, before
 func (r *UserRepository) DeleteStaleAppTokens(c context.Context) error {
 	now := time.Now().UTC()
 	return r.db.WithContext(c).Where("expires_at <= ?", now).Delete(&models.AppToken{}).Error
+}
+
+func (r *UserRepository) IsAppTokenValid(c context.Context, tokenString string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(c).Model(&models.AppToken{}).Where("token = ?", tokenString).Count(&count).Error
+	if err != nil {
+		return false, fmt.Errorf("failed to check token validity: %w", err)
+	}
+	return count > 0, nil
 }
 
 func (r *UserRepository) GetLastCreatedOrModifiedForUserResources(c context.Context, userID int) (string, error) {
