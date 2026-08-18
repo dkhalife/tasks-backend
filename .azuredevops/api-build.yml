@@ -50,11 +50,12 @@ extends:
             vet: false
     # No approval gate — continuous deploy.
     - stage: push_canary
+      dependsOn: build
       templateContext:
         intent: build
       jobs:
       - job: image
-        condition: ne(variables['Build.Reason'], 'PullRequest')
+        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
         templateContext:
           containerImage:
           - name: api
