@@ -16,9 +16,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* && \
+    groupadd -g 1000 taskwiz && \
+    useradd -u 1000 -g taskwiz -s /usr/sbin/nologin -M taskwiz
 
 COPY --from=builder /app/publish .
+RUN chown -R taskwiz:taskwiz /app
 
 ENV ASPNETCORE_URLS="http://+:3001"
 
@@ -31,5 +34,7 @@ ENV ASPNETCORE_URLS="http://+:3001"
 ENV TW_API_URL="http://apiserver:2021"
 
 EXPOSE 3001
+
+USER taskwiz
 
 ENTRYPOINT ["dotnet", "TaskWizardMcpServer.dll"]
