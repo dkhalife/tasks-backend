@@ -39,12 +39,19 @@ RUN CGO_ENABLED=0 go build -ldflags "-s -w \
 # Stage 3: Create a smaller runtime image
 FROM alpine:latest
 
-RUN apk --no-cache add curl ca-certificates libc6-compat
+RUN apk --no-cache add curl ca-certificates libc6-compat && \
+    addgroup -g 1000 -S taskwiz && \
+    adduser -u 1000 -S taskwiz -G taskwiz
 
 COPY --from=builder /usr/src/app/task-wizard /task-wizard
 COPY apiserver/config/config.yaml /config/config.yaml
 
+RUN mkdir -p /usr/src/app/data && \
+    chown -R taskwiz:taskwiz /task-wizard /config /usr/src/app/data
+
 ENV GIN_MODE="release"
+
+USER taskwiz
 
 EXPOSE 2021
 
